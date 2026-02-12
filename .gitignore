@@ -1,0 +1,64 @@
+# KEIL uVision project files
+*.uvgui.*
+*.uvopt
+*.uvoptx
+*.uvproj
+*.uvprojx
+*.uvmpw
+
+# Build outputs
+*.build_log.htm
+*.lst
+*.map
+*.dep
+*.axf
+*.crf
+*.d
+*.o
+*.i
+*.htm
+*.sct
+
+# Object and output directories
+**/Obj/
+**/Output/
+**/Listings/
+
+# Debug files
+*.cdb
+*.ini
+
+# JLink debugger files
+*.jlink
+
+# Backup files
+*.__i
+*.bak
+*.tmp
+*~
+
+# IDE temporary files
+*.uvguix.*
+*.iex
+
+# Library files
+*.lib
+
+# Binary outputs
+*.bin
+*.hex
+*.elf
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Doxygen documentation
+docs/html/
+docs/latex/
+
+# User-specific files
+*.uvuser
+*.uvuser.*
+*.7z
+*.zip
