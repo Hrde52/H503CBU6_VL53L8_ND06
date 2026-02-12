@@ -9,20 +9,20 @@
 #define RS485_PDA_USART		huart2
 
 /* RS485 TX/RX Control */
-#define RS485_Elevator_TX_ENABLE()   	delay_10us(2);\
+#define RS485_Elevator_TX_ENABLE()   	HAL_Delay(20);/*delay_10us(2);*/\
 									HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);\
-									delay_10us(2);
+									HAL_Delay(20);;
 
-#define RS485_Elevator_RX_ENABLE()   	delay_10us(2);\
+#define RS485_Elevator_RX_ENABLE()   	HAL_Delay(20);;\
 									HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);\
-									delay_10us(2);
+									HAL_Delay(20);;
 									
 #define RS485_PDA_TX_ENABLE()   		/*HAL_Delay(20);*/\
-																		HAL_GPIO_WritePin(m485A_TE_GPIO_Port, m485A_TE_Pin, 0);\
+																		HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, 0);\
 																		//HAL_Delay(20);	
 
 #define RS485_PDA_RX_ENABLE()   		/*HAL_Delay(20);*/ \
-																		HAL_GPIO_WritePin(m485A_TE_GPIO_Port, m485A_TE_Pin, 0);\
+																		HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, 0);\
 																		/*HAL_Delay(20);	*/					
 									
 								

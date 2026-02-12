@@ -1,5 +1,9 @@
 --cpu=Cortex-M33
 "vl53\startup_stm32h503xx.o"
+"vl53\elevator_mpu.o"
+"vl53\rs485.o"
+"vl53\flash_storage.o"
+"vl53\platform.o"
 "vl53\main.o"
 "vl53\gpio.o"
 "vl53\gpdma.o"
@@ -31,6 +35,13 @@
 "vl53\stm32h5xx_hal_uart.o"
 "vl53\stm32h5xx_hal_uart_ex.o"
 "vl53\system_stm32h5xx.o"
+"vl53\vl53l8cx_api.o"
+"vl53\vl53l8cx_plugin_detection_thresholds.o"
+"vl53\vl53l8cx_plugin_motion_indicator.o"
+"vl53\vl53l8cx_plugin_xtalk.o"
+"vl53\example_1_ranging_basic.o"
+"vl53\example_2_get_set_params.o"
+"vl53\example_3_ranging_modes.o"
 --strict --scatter "VL53\VL53.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

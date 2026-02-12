@@ -26,7 +26,7 @@ static void UpdateElevatorState(void);
 void ElevatorMPU_Init(void)
 {
     /*
-    memset(rxBuf, 0, RX_BUF_SIZE);
+  memset(rxBuf, 0, RX_BUF_SIZE);
 	HAL_UART_Receive_DMA(&huart1, rxBuf, RX_BUF_SIZE);
   __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);	
     */
@@ -41,7 +41,7 @@ void ElevatorMPU_Init(void)
     }
     
     /* 使能DMA传输完成中断 */
-    __HAL_DMA_ENABLE_IT(&hdma_usart1_rx, DMA_IT_TC);
+//    __HAL_DMA_ENABLE_IT(&hdma_usart1_rx, DMA_IT_TC);
     
     elevator_communication_ok = true;
     // printf("Elevator MPU Module Initialized\r\n");
@@ -123,12 +123,12 @@ void ElevatorMPU_PrepareResponse(void)
 void ElevatorMPU_SendResponse(void)
 {
     /* 切换485方向控制为发送模式 */
-    RS485_1_TX_Enable();
+    RS485_Elevator_RX_ENABLE();
     
     /* 发送数据 */
     if (HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&elevator_tx_data, 16) != HAL_OK)
     {
-        ElevatorMPU_ErrorHandler(0x02);
+        //ElevatorMPU_ErrorHandler(0x02);
     }
     else
     {
@@ -136,7 +136,7 @@ void ElevatorMPU_SendResponse(void)
         while(HAL_UART_GetState(&huart1) == HAL_UART_STATE_BUSY_TX);
         
         /* 切换回接收模式 */
-        RS485_1_RX_Enable();
+        RS485_Elevator_RX_ENABLE();
     }
 }
 
@@ -159,7 +159,7 @@ void ElevatorMPU_RxCpltCallback(UART_HandleTypeDef *huart)
         }
         else
         {
-            ElevatorMPU_ErrorHandler(0x03);
+//            ElevatorMPU_ErrorHandler(0x03);
         }
     }
 }
@@ -197,14 +197,14 @@ ElevatorState_t ElevatorMPU_GetCurrentState(void)
     return current_state;
 }
 
-/**
-  * @brief 获取当前楼层
-  * @retval 楼层号
-  */
-uint8_t ElevatorMPU_GetCurrentFloor(void)
-{
-    return current_floor;
-}
+///**
+//  * @brief 获取当前楼层
+//  * @retval 楼层号
+//  */
+//uint8_t ElevatorMPU_GetCurrentFloor(void)
+//{
+//    return current_floor;
+//}
 
 /**
   * @brief 检查通信超时
@@ -260,30 +260,30 @@ static uint8_t CalculateXOR(const uint8_t *data, uint8_t len)
 static void ProcessElevatorData(void)
 {
     /* 更新当前楼层 */
-    current_floor = elevator_rx_data.floor_num;
+//    current_floor = elevator_rx_data.floor_num;
     
     /* 更新运行状态 */
-    switch(elevator_rx_data.direction)
-    {
-        case 0:
-            current_state = ELEVATOR_IDLE;
-            break;
-        case 1:
-            current_state = ELEVATOR_RUNNING_UP;
-            break;
-        case 2:
-            current_state = ELEVATOR_RUNNING_DOWN;
-            break;
-    }
-    
-    /* 处理错误代码 */
-    if (elevator_rx_data.error_code != 0)
-    {
-        ElevatorMPU_ErrorHandler(elevator_rx_data.error_code);
-    }
+//    switch(elevator_rx_data.direction)
+//    {
+//        case 0:
+//            current_state = ELEVATOR_IDLE;
+//            break;
+//        case 1:
+//            current_state = ELEVATOR_RUNNING_UP;
+//            break;
+//        case 2:
+//            current_state = ELEVATOR_RUNNING_DOWN;
+//            break;
+//    }
+//    
+//    /* 处理错误代码 */
+//    if (elevator_rx_data.error_code != 0)
+//    {
+//        ElevatorMPU_ErrorHandler(elevator_rx_data.error_code);
+//    }
     
     /* 更新电梯状态 */
-    UpdateElevatorState();
+//    UpdateElevatorState();
 }
 
 /**

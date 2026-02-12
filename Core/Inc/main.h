@@ -71,6 +71,7 @@ void Error_Handler(void);
 #define VL53B_SYNC_GPIO_Port GPIOA
 #define VL53B_INT_Pin GPIO_PIN_0
 #define VL53B_INT_GPIO_Port GPIOB
+#define VL53B_INT_EXTI_IRQn EXTI0_IRQn
 #define VL53A_NCS_Pin GPIO_PIN_1
 #define VL53A_NCS_GPIO_Port GPIOB
 #define VL53A_LPn_Pin GPIO_PIN_2

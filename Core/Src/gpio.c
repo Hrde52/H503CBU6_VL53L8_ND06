@@ -69,8 +69,8 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : VL53B_INT_Pin */
   GPIO_InitStruct.Pin = VL53B_INT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(VL53B_INT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : VL53A_NCS_Pin VL53A_LPn_Pin */
@@ -107,6 +107,9 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(RS485_EN_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
   HAL_NVIC_SetPriority(EXTI10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI10_IRQn);
 
