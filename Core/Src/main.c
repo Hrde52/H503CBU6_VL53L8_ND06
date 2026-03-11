@@ -18,10 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "gpdma.h"
 #include "i2c.h"
 #include "icache.h"
-#include "iwdg.h"
 #include "rtc.h"
 #include "usart.h"
 #include "gpio.h"
@@ -30,6 +28,16 @@
 /* USER CODE BEGIN Includes */
 #include "vl53l8cx_api.h"
 #include "Example.h"
+
+#include "vl53cx8_app.h"
+
+#include "nd06av1c_app.h"
+#include "nd06av1c_comm.h"
+#include "nd06av1c_data.h"
+#include "nd06av1c_def.h"
+#include "nd06av1c_dev.h"
+#include "platform.h"
+
 #include <string.h>
 /* USER CODE END Includes */
 
@@ -52,6 +60,8 @@
 
 /* USER CODE BEGIN PV */
 volatile int IntCount;
+ND06_DATA nd06_data = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,7 +79,11 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+uint8_t num_of_pixel_occluded , work_j, nd06OutputEN, nd06AV1C_objDetectFlag;
+uint8_t timesND06Failed = 0;
+uint32_t ret;
 
+VL53L8CX_ResultsData 	Results;
 /* USER CODE END 0 */
 
 /**
@@ -101,17 +115,24 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_GPDMA1_Init();
   MX_ICACHE_Init();
   MX_RTC_Init();
   MX_I2C1_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_I2C2_Init();
-//  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
-//	printf("example1 Test !!!\r\n");
-	example1();
+	ND06AV1C_OFF();
+	ND06AV1C_ON();
+	HAL_Delay(2000);
+	ND06AV1C_Init();
+	
+	static VL53L8CX_Configuration 	Dev;
+	vl53cx8_device_init(&Dev, 8, 5);
+	
+	
+//	example8();
+//	example1();  // l8传感器
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -121,6 +142,26 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+		if (TIME_1MS_FLAG == 1)
+		{
+			TIME_1MS_FLAG = 0;
+		}
+		if (TIME_5MS_FLAG == 1)
+		{
+			TIME_5MS_FLAG = 0;
+			vl53cx8_ranging_data(&Dev, &Results);
+		}
+		if (TIME_10MS_FLAG == 1)
+		{
+			TIME_10MS_FLAG = 0;
+			ND06AV1C_Ranging(&nd06_data, 0, work_j, &nd06AV1C_objDetectFlag);
+		}
+		if (TIME_100MS_FLAG == 1)
+		{
+			TIME_100MS_FLAG = 0;
+		}
+		
+		
   }
   /* USER CODE END 3 */
 }
@@ -173,7 +214,7 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK3;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB3CLKDivider = RCC_HCLK_DIV1;
 

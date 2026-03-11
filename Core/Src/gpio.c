@@ -44,7 +44,7 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, VL53B_NCS_Pin|SP1_IIC_N2_Pin|VL53B_LPn_Pin|VL53B_SYNC_Pin
+  HAL_GPIO_WritePin(GPIOA, VL53B_NCS_Pin|SPI_IIC_N2_Pin|VL53B_LPn_Pin|VL53B_SYNC_Pin
                           |ND06_EN_Pin|VL53A_SYNC_Pin|SPI_IIC_N_Pin|ND06_XSHUT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -56,10 +56,10 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(TOF_LED_GPIO_Port, TOF_LED_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pins : VL53B_NCS_Pin SP1_IIC_N2_Pin VL53B_LPn_Pin VL53B_SYNC_Pin
+  /*Configure GPIO pins : VL53B_NCS_Pin SPI_IIC_N2_Pin VL53B_LPn_Pin VL53B_SYNC_Pin
                            ND06_EN_Pin TOF_LED_Pin VL53A_SYNC_Pin SPI_IIC_N_Pin
                            ND06_XSHUT_Pin */
-  GPIO_InitStruct.Pin = VL53B_NCS_Pin|SP1_IIC_N2_Pin|VL53B_LPn_Pin|VL53B_SYNC_Pin
+  GPIO_InitStruct.Pin = VL53B_NCS_Pin|SPI_IIC_N2_Pin|VL53B_LPn_Pin|VL53B_SYNC_Pin
                           |ND06_EN_Pin|TOF_LED_Pin|VL53A_SYNC_Pin|SPI_IIC_N_Pin
                           |ND06_XSHUT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -70,7 +70,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin : VL53B_INT_Pin */
   GPIO_InitStruct.Pin = VL53B_INT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(VL53B_INT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : VL53A_NCS_Pin VL53A_LPn_Pin */
@@ -95,8 +95,8 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : VL53A_INT_Pin */
   GPIO_InitStruct.Pin = VL53A_INT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(VL53A_INT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : RS485_EN_Pin */
@@ -107,10 +107,10 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(RS485_EN_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI10_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI10_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI10_IRQn);
 
 }

@@ -1,7 +1,11 @@
 #include "rs485.h"
 //#include "PDA_Communication.h"
 #include "main.h"
+//#include "sensorAppLogic.h"
+//#include "sensorParaTable.h"
 #include "string.h"
+//#include "toolingtest.h"
+//#include "elevatorSignalMonitor.h"
 
 unsigned char gLookupTableCRC8[256] = {
     /* 0x00 */ 0x00, 0x91, 0xE3, 0x72, 0x07, 0x96, 0xE4, 0x75,
@@ -37,6 +41,40 @@ unsigned char gLookupTableCRC8[256] = {
     0xB4, 0x25, 0x57, 0xC6, 0xB3, 0x22, 0x50, 0xC1,
     0xBA, 0x2B, 0x59, 0xC8, 0xBD, 0x2C, 0x5E, 0xCF};
 
+uint16_t RxElevatorCnt = 0;
+uint16_t headerIsFoundFlag = 0;
+uint16_t rxSize = 6;
+bool isSixBytes = true; // true 6 false HCB 4 
+bool isFixBytes = false;
+
+ControlSystemPara CSpara = {0, 0, 0, 0, 0};
+
+uint8_t rxDataBuffElevator[1] = {0};
+uint8_t rx_data_Elevator[17] = {0, 0, 0, 0, 0, 0,0,0,0,0,
+0, 0, 0, 0, 0, 0,0};
+uint8_t RxDataElevator[6] = {0, 0, 0, 0, 0, 0};
+uint8_t rxDataBuffPDA[4] = {0, 0, 0, 0};
+uint8_t rs485ElevatorRxCpltFlag = 0;
+uint8_t rs485PDARxCpltFlag = 0;
+
+uint8_t testArr[100];
+uint16_t testii = 0;
+uint8_t testArr2[100];
+uint16_t testii2 = 0;
+
+uint16_t rxIndex = 0;
+uint16_t total_len = 0;
+uint8_t rxDBuffPDA[MAX_RX_LEN];
+uint8_t iindex = 0;
+uint8_t rx_DBuffPDA[MAX_RX_LEN];
+SensorProtocol *global_pkt = NULL;
+
+uint16_t rxIndexTooling = 0;
+uint16_t rxIndexTooling2 = 0;
+uint8_t rxDBuffTooling1[10];
+uint8_t rxDBuffTooling2[10];
+uint8_t gotToolingHandshake = 0;
+
 uint8_t CalcCRC8(uint8_t *inBuffer, int inSize)
 {
     uint8_t aCRC;
@@ -61,23 +99,51 @@ uint8_t xor_checkSum(uint8_t *data, uint8_t length)
     return checkSum;
 }
 
-uint8_t rxDataBuffPDA[4] = {0, 0, 0, 0};
-uint8_t rs485ElevatorRxCpltFlag = 0;
-uint8_t rs485PDARxCpltFlag = 0;
+void RS485_Elevator_Init()
+{
+    HAL_UART_Receive_IT(&huart1, rxDataBuffElevator, 1);
+    RS485_Elevator_RX_ENABLE();
+}
 
-uint8_t headerIsFoundFlag = 0;
-uint8_t dataIsReceived = 0;
+void RS485_PDA_Init()
+{
+    HAL_UART_Receive_IT(&huart1, rxDataBuffPDA, 4);
+    RS485_PDA_RX_ENABLE();
+}
 
-uint8_t testArr2[100];
-uint16_t testii2 = 0;
 
-uint16_t rxIndex = 0;
-uint16_t total_len = 0;
-uint8_t rxBuffPDA[MAX_RX_LEN];
-uint8_t rxPDAIndex = 0;
-uint8_t iindex = 0;
-uint8_t rx_DBuffPDA[MAX_RX_LEN];
-SensorProtocol *global_pkt = NULL;
+int RS485_Elevator_Transmit(uint8_t *data, uint16_t len)
+{
+    HAL_StatusTypeDef status;
+
+    RS485_Elevator_TX_ENABLE();
+
+    status = HAL_UART_Transmit(&RS485_Elevator_USART, data, len, 1);
+
+    // HAL_Delay(1);
+
+    RS485_Elevator_RX_ENABLE();
+    rs485ElevatorRxCpltFlag = 0;
+
+    return status == HAL_OK ? 0 : -1;
+}
+
+int RS485_PDA_Transmit(uint8_t *data, uint16_t len)
+{
+    HAL_StatusTypeDef status;
+
+    RS485_PDA_TX_ENABLE();
+
+    status = HAL_UART_Transmit(&RS485_PDA_USART, data, len, 1);
+
+    // HAL_Delay(1);
+
+    RS485_PDA_RX_ENABLE();
+    rs485PDARxCpltFlag = 0;
+
+    return status == HAL_OK ? 0 : -1;
+}
+
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
@@ -85,70 +151,231 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
     if (huart->Instance == USART1)
     {
+			testArr[testii] = rxDataBuffElevator[0];
+			testii++;
+			if (testii >= 100)
+			{
+				testii = 0;
+			}
+
+			if (rxDataBuffElevator[0] == 0x87)
+			{
+				headerIsFoundFlag = 1;
+				RxElevatorCnt = 0;
+			}
+
+			if (headerIsFoundFlag == 1)
+			{
+				rx_data_Elevator[RxElevatorCnt++] = rxDataBuffElevator[0];
+
+				if (RxElevatorCnt >= 17)
+				{
+					ProcessElevatorData();
+					headerIsFoundFlag = 0;
+				}
+			}
+			
+			rxDataBuffElevator[0] = 0;
+			HAL_UART_Receive_IT(&RS485_Elevator_USART, rxDataBuffElevator, 1);
     }
 
     else if (huart->Instance == USART2)
     {
-        if (rxPDAIndex == 0 && rxBuffPDA[0] != 0XAA)
-        {
-            rxPDAIndex = 0;
-            HAL_UART_Receive_IT(&huart2, &rxBuffPDA[rxPDAIndex], 1);
-            return;
-        }
+			rx_DBuffPDA[iindex++] = rxDBuffPDA[rxIndex];
+			if (iindex >= 128)
+			{
+					iindex = 0;
+			}
 
-        if (rxPDAIndex >= sizeof(SensorProtocol))
-        {
-            SensorProtocol *pkt = (SensorProtocol *)rxBuffPDA;
-            global_pkt = pkt;
+			//  Header
+			if (rxIndex == 0 && rxDBuffPDA[0] != 0XAA) //(HEADER & 0xFF)
+			{
+					rxIndex = 0;
+					HAL_UART_Receive_IT(&RS485_PDA_USART, &rxDBuffPDA[rxIndex], 1);
+					return;
+			}
 
-            uint8_t sizeSP = sizeof(SensorProtocol);
-            total_len = sizeSP - 3 /*cmd+l1*/ + pkt->length;
-            if (total_len >= MAX_RX_LEN)
-            {
-                rxPDAIndex = 0;
-                total_len = 0;
-                memset(rxBuffPDA, 0, sizeof(rxBuffPDA));
+			if (rxIndex >= sizeof(SensorProtocol))
+			{
+				SensorProtocol *pkt = (SensorProtocol *)rxDBuffPDA;
+				global_pkt = pkt;
 
-                RS485_PDA_RX_ENABLE();
-                HAL_UART_Receive_IT(&huart2, &rxBuffPDA[rxPDAIndex], 1);
-                return;
-            }
+				uint8_t sizeSP = sizeof(SensorProtocol);
+				total_len = sizeSP - 3 + pkt->length; // /*cmd+l1 = 3*/ DATA1
+				if (total_len >= MAX_RX_LEN)
+				{
+						rxIndex = 0;
+						total_len = 0;
+						memset(rxDBuffPDA, 0, sizeof(rxDBuffPDA)); //
 
-            if (rxPDAIndex >= total_len - 1)
-            {
-                //ProcessPacket(pkt);
+						RS485_PDA_RX_ENABLE();
+						HAL_UART_Receive_IT(&RS485_PDA_USART, &rxDBuffPDA[rxIndex], 1);
+						return;
+				}
 
-                rxPDAIndex = 0;
-                total_len = 0;
-                memset(rxBuffPDA, 0, sizeof(rxBuffPDA));
+				if (rxIndex >= total_len - 1)
+				{
+//						ProcessPacket(pkt);
 
-                // memset(global_pkt, 0, sizeof(global_pkt));
-                RS485_PDA_RX_ENABLE();
-                HAL_UART_Receive_IT(&huart2, &rxBuffPDA[rxPDAIndex], 1);
+						rxIndex = 0;
+						total_len = 0;
+						memset(rxDBuffPDA, 0, sizeof(rxDBuffPDA));
+						RS485_PDA_RX_ENABLE();
+						HAL_UART_Receive_IT(&RS485_PDA_USART, &rxDBuffPDA[rxIndex], 1);
+						return;
+				}
+			}
 
-                return;
-            }
-        }
+			rxIndex++;
+			if (rxIndex >= MAX_RX_LEN)
+			{
+				rxIndex = 0;
+			}
 
-        rxPDAIndex++;
-        if (rxPDAIndex >= MAX_RX_LEN)
-        {
-            rxPDAIndex = 0;
-        }
-
-        HAL_UART_Receive_IT(&huart2, &rxBuffPDA[rxPDAIndex], 1);
+			HAL_UART_Receive_IT(&RS485_PDA_USART, &rxDBuffPDA[rxIndex], 1); 
     }
+}
+
+
+
+uint8_t connectEleFlag = 0;
+uint8_t masterElevator_LevelingSignal = 0;
+uint8_t tx_data_Door[16] = {0, 0, 0, 0, 0, 0, 0,0, 0, 0, 0, 0, 0, 0,0,0};
+uint8_t rxDataEleHeander = 0;
+uint32_t lastReceivedELETime = 0;
+uint32_t cls_cmd_Time =0;
+uint32_t cls_Time = 0;
+uint8_t  ObjectIsDetectedFlag;
+
+void ProcessElevatorData(void)
+{
+	//recEleMsgFLG = 1;
+	lastReceivedELETime = HAL_GetTick();
+
+	connectEleFlag = 1;
+		
+		uint8_t checkXor = xor_checkSum(rx_data_Elevator, 16);
+		if (checkXor == rx_data_Elevator[16])
+		{
+			CSpara.LevelingSignal = 1;
+
+			masterElevator_LevelingSignal = (rx_data_Elevator[1] >> 0) & 0x01; 
+			if ((rx_data_Elevator[1] >> 0 & 0X01))
+			{
+				
+					CSpara.openDoorCmd = 1;
+			}
+			else
+			{
+					CSpara.openDoorCmd = 0;
+			}
+
+			if ((rx_data_Elevator[1] >> 1 & 0X01))
+			{
+				if(CSpara.closeDoorCmd == 0)
+				{
+					cls_cmd_Time = HAL_GetTick();
+					
+				}
+				if(CSpara.OLS == 1)
+				{
+					work_j = 0;
+				}
+				CSpara.closeDoorCmd = 1;
+			}
+			else
+			{
+					CSpara.closeDoorCmd = 0;
+			}
+			
+			if ((rx_data_Elevator[1] >> 4 & 0X01))
+			{
+					CSpara.OLS = 1;
+			}
+			else
+			{
+					CSpara.OLS = 0;
+			}
+			
+			if ((rx_data_Elevator[1] >> 5 & 0X01))
+			{
+				cls_Time = HAL_GetTick() - cls_cmd_Time;
+				CSpara.CLS = 1;
+				cls_cmd_Time = 0;
+			}
+			else
+			{
+				CSpara.CLS = 0;
+//				work_j = 2;
+			}
+
+			tx_data_Door[0] = 0x86;
+
+			ByteBits *byte_bits = (ByteBits *)&tx_data_Door[1]; // ??? packet[1]
+			if((ObjectIsDetectedFlag == 1 ) || (nd06AV1C_objDetectFlag == 1))
+			{
+//				byte_bits->bits.bit0 = 1;
+				if(HAL_GetTick() - cls_cmd_Time < 0xBB8 )   //0x7d0 2
+				{
+					if(HAL_GetTick() - cls_cmd_Time < 0x7d0 )
+					{
+						work_j = 0;
+					}
+					else if(HAL_GetTick() - cls_cmd_Time < 0x898)  // 0xBB8 3  0x9c4 2.5  0x898 2.2 0x7d0 2
+					{
+						work_j = 1;
+						
+					}
+					else
+					{
+						work_j = 2;
+					}
+					
+					if((work_j == 0)||(work_j == 1))
+						tx_data_Door[1] = 0x01;
+				}
+				if(CSpara.OLS == 1)
+				{
+					tx_data_Door[1] = 0x01;
+					cls_cmd_Time = 0;
+					work_j = 0;
+				}
+			}
+			else
+			{				
+//				byte_bits->bits.bit0 = 0;
+				tx_data_Door[1] = 0x00;
+			}
+
+			tx_data_Door[2] = 0x01;
+			
+			tx_data_Door[8] = 0x01;
+			tx_data_Door[9] = 0x01;
+			tx_data_Door[10] = 0x01;
+			tx_data_Door[11] = 0x40;
+
+			// byte16
+			tx_data_Door[15] = xor_checkSum(tx_data_Door, 16);
+
+			delay_10us(29);
+			HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
+			delay_10us(1);
+			HAL_UART_Transmit_IT(&RS485_Elevator_USART, tx_data_Door, 16);
+		}
+
+    headerIsFoundFlag = 0;
+    RxElevatorCnt = 0;
+    memset(rx_data_Elevator, 0, sizeof(rx_data_Elevator));
+    return;
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART1)
     {
-        //        HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
-        //        delay_10us(1);
-        //        HAL_UART_Receive_IT(&RS485_Elevator_USART, rxDataBuffElevator, 1);
+        HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);
+        delay_10us(1);
+        HAL_UART_Receive_IT(&RS485_Elevator_USART, rxDataBuffElevator, 1);
     }
 }
-
-
 // END

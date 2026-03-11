@@ -33,6 +33,9 @@ extern "C" {
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
+#define LEDON		do{HAL_GPIO_WritePin(TOF_LED_GPIO_Port,TOF_LED_Pin,GPIO_PIN_RESET);}while(0)
+#define	LEDOFF		do{HAL_GPIO_WritePin(TOF_LED_GPIO_Port,TOF_LED_Pin,GPIO_PIN_SET);}while(0)
+#define	LEDTOGGLE	do{ HAL_GPIO_TogglePin(TOF_LED_GPIO_Port, TOF_LED_Pin); }while(0) 
 
 /* USER CODE END Private defines */
 

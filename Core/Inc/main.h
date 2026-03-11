@@ -63,8 +63,8 @@ void Error_Handler(void);
 #define RS485_GHP_RX_GPIO_Port GPIOA
 #define VL53B_NCS_Pin GPIO_PIN_4
 #define VL53B_NCS_GPIO_Port GPIOA
-#define SP1_IIC_N2_Pin GPIO_PIN_5
-#define SP1_IIC_N2_GPIO_Port GPIOA
+#define SPI_IIC_N2_Pin GPIO_PIN_5
+#define SPI_IIC_N2_GPIO_Port GPIOA
 #define VL53B_LPn_Pin GPIO_PIN_6
 #define VL53B_LPn_GPIO_Port GPIOA
 #define VL53B_SYNC_Pin GPIO_PIN_7
@@ -103,15 +103,12 @@ void Error_Handler(void);
 #define RS485_GHP_EN_GPIO_Port GPIOB
 #define RS485_EN_Pin GPIO_PIN_5
 #define RS485_EN_GPIO_Port GPIOB
-#define ND06_VL53A_SCL_Pin GPIO_PIN_6
-#define ND06_VL53A_SCL_GPIO_Port GPIOB
-#define ND06_VL53A_SDA_Pin GPIO_PIN_7
-#define ND06_VL53A_SDA_GPIO_Port GPIOB
 #define VL53B_SDA_Pin GPIO_PIN_8
 #define VL53B_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-
+#define DebugPrintfFlag 0
+extern uint8_t num_of_pixel_occluded , work_j, nd06OutputEN, nd06AV1C_objDetectFlag;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

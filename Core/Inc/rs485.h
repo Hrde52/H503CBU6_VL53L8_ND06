@@ -2,28 +2,42 @@
 #define _RS485_DRV_H_
 
 #include "usart.h"
+#include "platform.h"
 #include "main.h"
 #include <stdbool.h>
 /* User Config */
 #define RS485_Elevator_USART	huart1
 #define RS485_PDA_USART		huart2
+//#define RS485_RE_GPIO_PORT  GPIOG
+//#define RS485_RE_GPIO_PIN   GPIO_PIN_8
 
 /* RS485 TX/RX Control */
-#define RS485_Elevator_TX_ENABLE()   	HAL_Delay(20);/*delay_10us(2);*/\
+
+
+#define RS485_Elevator_TX_ENABLE()   	delay_10us(2);\
 									HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);\
-									HAL_Delay(20);;
+									delay_10us(2);
 
-#define RS485_Elevator_RX_ENABLE()   	HAL_Delay(20);;\
+#define RS485_Elevator_RX_ENABLE()   	delay_10us(2);\
 									HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);\
-									HAL_Delay(20);;
-									
-#define RS485_PDA_TX_ENABLE()   		/*HAL_Delay(20);*/\
-																		HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, 0);\
-																		//HAL_Delay(20);	
+									delay_10us(2);
+                                    
+//#define RS485_Elevator_TX_ENABLE()   	delay_10us(2);\
+//									HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, GPIO_PIN_SET);\
+//									delay_10us(2);
 
-#define RS485_PDA_RX_ENABLE()   		/*HAL_Delay(20);*/ \
-																		HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, 0);\
-																		/*HAL_Delay(20);	*/					
+//#define RS485_Elevator_RX_ENABLE()   	delay_10us(2);\
+//									HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, GPIO_PIN_RESET);\
+//									delay_10us(2);                 
+									
+									
+#define RS485_PDA_TX_ENABLE()   		delay_10us(2);\
+									HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, GPIO_PIN_SET);\
+									delay_10us(2);
+
+#define RS485_PDA_RX_ENABLE()   		delay_10us(2);\
+									HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, GPIO_PIN_RESET);\
+									delay_10us(2);							
 									
 								
 
@@ -33,14 +47,21 @@ void RS485_PDA_Init(void);
 int RS485_PDA_Transmit(uint8_t *data, uint16_t len);
 
 
-extern uint8_t rxBuffDTS[30];
-extern uint16_t rxIndexDTS;
-extern uint8_t dataIsReceived;
+
+extern uint8_t connectEleFlag;
+extern uint8_t rs485ElevatorRxCpltFlag;
+extern uint8_t rx_data_Elevator[17];
 extern uint8_t rs485PDARxCpltFlag;
 extern uint8_t rxDataBuffPDA[4];
 extern uint16_t RxElevatorCnt;
 
-
+/*
+uint32_t closeDoorCmd;      关门指令
+uint32_t openDoorCmd;       开门指令
+uint32_t OLS;               开门到位
+uint32_t CLS;               关门到位
+uint32_t LevelingSignal;    平层
+*/
 typedef struct{
 	uint32_t closeDoorCmd;    
 	uint32_t openDoorCmd;
@@ -61,12 +82,12 @@ typedef struct {
     uint16_t crc;    // 2 
     uint16_t cmd;    // 2 
     uint8_t l1;      // 1 
-    uint8_t data1[]; //   ,  
+    uint8_t data1[]; //    
 } SensorProtocol;
 #pragma pack(pop)
 
 typedef union {
-    uint8_t raw; 
+    uint8_t raw; // 整个字节
     struct {
         uint8_t bit0 : 1;
         uint8_t bit1 : 1;
@@ -81,24 +102,37 @@ typedef union {
 
 #define MAX_RX_LEN 128 
 #define HEADER 0x55AA
-extern uint8_t rxBuffPDA[MAX_RX_LEN];
-extern uint8_t rxPDAIndex;
+extern uint8_t rxDBuffPDA[MAX_RX_LEN];
 extern uint16_t rxSize;
 extern uint8_t RxDataElevator[6];
 extern uint16_t rxSize;
 extern bool isSixBytes;
 extern bool isFiveBytes;
 
-extern uint8_t headerIsFoundFlag;
+extern uint16_t headerIsFoundFlag;
 
 extern uint8_t masterElevator_LevelingSignal;
 
 extern uint8_t dTS6012M_rxDone;
 
-void ProcessData(uint8_t *data, uint16_t length);
+extern uint8_t gotToolingHandshake;
+
+extern uint16_t rxIndexTooling;
+extern uint16_t rxIndexTooling2;
+extern uint8_t rxDBuffTooling1[10];
+extern uint8_t rxDBuffTooling2[10];
+//extern uint8_t recEleMsgFLG;
+
+// 新增数据处理函数
+void ProcessElevatorData(void);
 
 uint8_t CalcCRC8(uint8_t *inBuffer, int inSize);
 uint8_t xor_checkSum(uint8_t *data, uint8_t length);
+uint8_t isFrontDoorID(uint8_t id);
+uint8_t isBackDoorID(uint8_t id);
 
+extern uint8_t resultUp[20];
 
+void Process485Tooling(uint8_t *data);
+void ProcessGHPTooling(uint8_t *data);
 #endif /* _RS485_DRV_H_ */

@@ -21,14 +21,11 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
-
+//#include <stdio.h>
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
-DMA_NodeTypeDef Node_GPDMA1_Channel0;
-DMA_QListTypeDef List_GPDMA1_Channel0;
-DMA_HandleTypeDef handle_GPDMA1_Channel0;
 
 /* USART1 init function */
 
@@ -43,8 +40,8 @@ void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 125000;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_9B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_EVEN;
   huart1.Init.Mode = UART_MODE_TX_RX;
@@ -123,7 +120,6 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  DMA_NodeConfTypeDef NodeConfig= {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
   if(uartHandle->Instance==USART1)
   {
@@ -154,62 +150,6 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF4_USART1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-    /* USART1 DMA Init */
-    /* GPDMA1_REQUEST_USART1_RX Init */
-    NodeConfig.NodeType = DMA_GPDMA_LINEAR_NODE;
-    NodeConfig.Init.Request = GPDMA1_REQUEST_USART1_RX;
-    NodeConfig.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
-    NodeConfig.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    NodeConfig.Init.SrcInc = DMA_SINC_FIXED;
-    NodeConfig.Init.DestInc = DMA_DINC_INCREMENTED;
-    NodeConfig.Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
-    NodeConfig.Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
-    NodeConfig.Init.SrcBurstLength = 1;
-    NodeConfig.Init.DestBurstLength = 1;
-    NodeConfig.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0|DMA_DEST_ALLOCATED_PORT0;
-    NodeConfig.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
-    NodeConfig.Init.Mode = DMA_NORMAL;
-    NodeConfig.TriggerConfig.TriggerPolarity = DMA_TRIG_POLARITY_MASKED;
-    NodeConfig.DataHandlingConfig.DataExchange = DMA_EXCHANGE_NONE;
-    NodeConfig.DataHandlingConfig.DataAlignment = DMA_DATA_RIGHTALIGN_ZEROPADDED;
-    if (HAL_DMAEx_List_BuildNode(&NodeConfig, &Node_GPDMA1_Channel0) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    if (HAL_DMAEx_List_InsertNode(&List_GPDMA1_Channel0, NULL, &Node_GPDMA1_Channel0) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    if (HAL_DMAEx_List_SetCircularMode(&List_GPDMA1_Channel0) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    handle_GPDMA1_Channel0.Instance = GPDMA1_Channel0;
-    handle_GPDMA1_Channel0.InitLinkedList.Priority = DMA_LOW_PRIORITY_MID_WEIGHT;
-    handle_GPDMA1_Channel0.InitLinkedList.LinkStepMode = DMA_LSM_FULL_EXECUTION;
-    handle_GPDMA1_Channel0.InitLinkedList.LinkAllocatedPort = DMA_LINK_ALLOCATED_PORT0;
-    handle_GPDMA1_Channel0.InitLinkedList.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
-    handle_GPDMA1_Channel0.InitLinkedList.LinkedListMode = DMA_LINKEDLIST_CIRCULAR;
-    if (HAL_DMAEx_List_Init(&handle_GPDMA1_Channel0) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    if (HAL_DMAEx_List_LinkQ(&handle_GPDMA1_Channel0, &List_GPDMA1_Channel0) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    __HAL_LINKDMA(uartHandle, hdmarx, handle_GPDMA1_Channel0);
-
-    if (HAL_DMA_ConfigChannelAttributes(&handle_GPDMA1_Channel0, DMA_CHANNEL_NPRIV) != HAL_OK)
-    {
-      Error_Handler();
-    }
 
     /* USART1 interrupt Init */
     HAL_NVIC_SetPriority(USART1_IRQn, 2, 0);
@@ -274,9 +214,6 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
     */
     HAL_GPIO_DeInit(GPIOB, RS485_TX_Pin|RS485_RX_Pin);
 
-    /* USART1 DMA DeInit */
-    HAL_DMA_DeInit(uartHandle->hdmarx);
-
     /* USART1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(USART1_IRQn);
   /* USER CODE BEGIN USART1_MspDeInit 1 */
@@ -306,5 +243,12 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
-
+#if (DebugPrintfFlag)
+int fputc(int ch, FILE *f)
+{
+  HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, 1); // ʹ��485����
+  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xffff);
+  return ch;
+}
+#endif
 /* USER CODE END 1 */

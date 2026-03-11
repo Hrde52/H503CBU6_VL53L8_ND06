@@ -39,7 +39,7 @@ void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x30C81026;
+  hi2c1.Init.Timing = 0x0080182A;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -54,7 +54,7 @@ void MX_I2C1_Init(void)
 
   /** Configure Analogue filter
   */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_DISABLE) != HAL_OK)
   {
     Error_Handler();
   }
@@ -82,7 +82,7 @@ void MX_I2C2_Init(void)
 
   /* USER CODE END I2C2_Init 1 */
   hi2c2.Instance = I2C2;
-  hi2c2.Init.Timing = 0x00707CBB;
+  hi2c2.Init.Timing = 0x00300F38;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -128,7 +128,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
   /** Initializes the peripherals clock
   */
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2C1;
-    PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
+    PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
     {
       Error_Handler();
@@ -139,7 +139,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     PB6     ------> I2C1_SCL
     PB7     ------> I2C1_SDA
     */
-    GPIO_InitStruct.Pin = ND06_VL53A_SCL_Pin|ND06_VL53A_SDA_Pin;
+    GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -209,9 +209,9 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
     PB6     ------> I2C1_SCL
     PB7     ------> I2C1_SDA
     */
-    HAL_GPIO_DeInit(ND06_VL53A_SCL_GPIO_Port, ND06_VL53A_SCL_Pin);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_6);
 
-    HAL_GPIO_DeInit(ND06_VL53A_SDA_GPIO_Port, ND06_VL53A_SDA_Pin);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_7);
 
   /* USER CODE BEGIN I2C1_MspDeInit 1 */
 
