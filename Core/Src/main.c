@@ -31,13 +31,14 @@
 
 #include "vl53cx8_app.h"
 
-#include "nd06av1c_app.h"
 #include "nd06av1c_comm.h"
 #include "nd06av1c_data.h"
 #include "nd06av1c_def.h"
 #include "nd06av1c_dev.h"
 #include "platform.h"
 
+#include "sensorParaTable.h"
+#include "rs485.h"
 #include <string.h>
 /* USER CODE END Includes */
 
@@ -79,7 +80,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t num_of_pixel_occluded , work_j, nd06OutputEN, nd06AV1C_objDetectFlag;
+uint8_t num_of_pixel_occluded , work_j, nd06OutputEN, nd06AV1C_objDetectFlag, ObjectIsDetectedFlag, nb_target, current_vl_resl;
 uint8_t timesND06Failed = 0;
 uint32_t ret;
 
@@ -94,7 +95,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+	static VL53L8CX_Configuration 	Dev;
+	nb_target = 2;
+	current_vl_resl = 8;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -122,17 +125,22 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
-	ND06AV1C_OFF();
-	ND06AV1C_ON();
-	HAL_Delay(2000);
-	ND06AV1C_Init();
+	paraTable_Init();
 	
-	static VL53L8CX_Configuration 	Dev;
-	vl53cx8_device_init(&Dev, 8, 5);
+//	ND06AV1C_OFF();
+//	ND06AV1C_ON();
+//	HAL_Delay(2000);
+//	ND06AV1C_Init();
 	
+	vl53cx8_device_init(&Dev, current_vl_resl, 10);
+	
+	RS485_PDA_RX_ENABLE();
+  HAL_UART_Receive_IT(&RS485_PDA_USART, rxDBuffPDA, 1);
+	
+	RS485_Elevator_Init();
 	
 //	example8();
-//	example1();  // l8传感器
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -149,12 +157,18 @@ int main(void)
 		if (TIME_5MS_FLAG == 1)
 		{
 			TIME_5MS_FLAG = 0;
-			vl53cx8_ranging_data(&Dev, &Results);
+			
 		}
 		if (TIME_10MS_FLAG == 1)
 		{
 			TIME_10MS_FLAG = 0;
-			ND06AV1C_Ranging(&nd06_data, 0, work_j, &nd06AV1C_objDetectFlag);
+			
+			vl53cx8_ranging_data(&Dev, &Results);
+			process_second_targets(&Results, PARA_TABLE_USE.data.nd06StudyDistance, 
+															PARA_TABLE_USE.data.nd06DistanceChkThreshold, 
+															&ObjectIsDetectedFlag);
+			
+//			ND06AV1C_Ranging(&nd06_data, 0, work_j, &nd06AV1C_objDetectFlag);
 		}
 		if (TIME_100MS_FLAG == 1)
 		{

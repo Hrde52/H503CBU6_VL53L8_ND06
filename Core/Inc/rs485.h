@@ -21,16 +21,7 @@
 #define RS485_Elevator_RX_ENABLE()   	delay_10us(2);\
 									HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_RESET);\
 									delay_10us(2);
-                                    
-//#define RS485_Elevator_TX_ENABLE()   	delay_10us(2);\
-//									HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, GPIO_PIN_SET);\
-//									delay_10us(2);
-
-//#define RS485_Elevator_RX_ENABLE()   	delay_10us(2);\
-//									HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, GPIO_PIN_RESET);\
-//									delay_10us(2);                 
-									
-									
+                                                 									
 #define RS485_PDA_TX_ENABLE()   		delay_10us(2);\
 									HAL_GPIO_WritePin(RS485_GHP_EN_GPIO_Port, RS485_GHP_EN_Pin, GPIO_PIN_SET);\
 									delay_10us(2);

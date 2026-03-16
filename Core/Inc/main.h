@@ -31,7 +31,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "nd06av1c_app.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -108,7 +108,8 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 #define DebugPrintfFlag 0
-extern uint8_t num_of_pixel_occluded , work_j, nd06OutputEN, nd06AV1C_objDetectFlag;
+extern uint8_t num_of_pixel_occluded , work_j, nd06OutputEN, nd06AV1C_objDetectFlag, ObjectIsDetectedFlag, nb_target, current_vl_resl;
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

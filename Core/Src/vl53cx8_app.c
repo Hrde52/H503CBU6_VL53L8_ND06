@@ -4,6 +4,7 @@
 #include "vl53l8cx_api.h"
 #include "flash_storage.h"
 #include "vl53cx8_app.h"
+#include "sensorParaTable.h"
 
 
 extern volatile int IntCount; //add Interrupt
@@ -57,11 +58,6 @@ uint8_t vl53cx8_device_init(VL53L8CX_Configuration *Dev, uint8_t Resolution, uin
 
 	/* (Optional) Reset sensor toggling PINs (see platform, not in API) */
 	VL53L8CX_Reset_Sensor(&(Dev->platform));
-
-	/* (Optional) Set a new I2C address if the wanted address is different
-	* from the default one (filled with 0x20 for this example).
-	*/
-	//status = vl53l8cx_set_i2c_address(&Dev, 0x20);
 
 
 	/*********************************/
@@ -140,4 +136,81 @@ uint8_t vl53cx8_ranging_data(VL53L8CX_Configuration *Dev, VL53L8CX_ResultsData *
 	return status;	
 }
 
+void process_second_targets(VL53L8CX_ResultsData *results,  uint32_t study_Dsitance, uint8_t thresh, uint8_t *detect_flag)
+{
+	uint8_t ZONE_COUNT;
+	if(current_vl_resl == 8)
+      ZONE_COUNT = 64;                     // 8x8 分辨率
+	else if(current_vl_resl == 4)
+		  ZONE_COUNT = 16; 
+	uint8_t TARGET_INDEX = VL53L8CX_NB_TARGET_PER_ZONE - 1;                    // 第二层目标索引 (0-based)
 
+	uint32_t pixel_dist;
+    for (uint8_t i = 0; i < current_vl_resl; i++)
+    {
+			for (uint8_t j = 0; j < current_vl_resl; j++)
+			{
+				if(VL53L8CX_NB_TARGET_PER_ZONE == 2)
+				{
+					uint8_t idx = 2*(i * 4 + j) + 1;
+//					pixel_dist = Results.distance_mm[2*(i * 4 + j) + 1];
+					int32_t distance = results->distance_mm[idx];
+					uint8_t status   = results->target_status[idx];
+
+			// 检查距离条件（>50mm）和目标状态有效（通常为5或9）
+					if (distance > 50 && (status == 5 || status == 9))
+					{
+						// 这里可以对有效数据进行处理，例如保存、平均等
+						// 注意：若需补偿滤光片厚度，可减去4mm得到实际物理距离
+						int32_t actual_distance = distance - 4; // 减去滤光片厚度
+						// 处理数据
+						if((actual_distance > 200)&&
+							(actual_distance < (study_Dsitance -thresh)))
+						{
+							*detect_flag = 1;
+						}
+						else
+						{
+							*detect_flag = 0;
+						}
+					}
+				}
+			}
+		}
+	/*
+	for (uint8_t zone = 0; zone < ZONE_COUNT; zone++)
+	{
+		// 计算第二层目标在数组中的偏移
+		uint16_t idx = zone * VL53L8CX_NB_TARGET_PER_ZONE + TARGET_INDEX;
+
+		// 检查该区域是否检测到至少 2 个目标
+		if (results->nb_target_detected[zone] >= 2)
+		{
+			int32_t distance = results->distance_mm[idx];
+			uint8_t status   = results->target_status[idx];
+
+			// 检查距离条件（>50mm）和目标状态有效（通常为5或9）
+			if (distance > 50 && (status == 5 || status == 9))
+			{
+				// 这里可以对有效数据进行处理，例如保存、平均等
+				// 注意：若需补偿滤光片厚度，可减去4mm得到实际物理距离
+				int32_t actual_distance = distance - 4; // 减去滤光片厚度
+				// 处理数据
+				if((actual_distance > 200)&&
+					(actual_distance < (study_Dsitance -thresh)))
+				{
+					*detect_flag = 1;
+				}
+				else
+				{
+					*detect_flag = 0;
+				}
+			}
+		}
+//		else
+//		{
+//			*detect_flag = 0;
+//		}
+	}
+	*/
+}

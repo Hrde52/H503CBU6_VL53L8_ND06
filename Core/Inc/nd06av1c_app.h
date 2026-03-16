@@ -10,7 +10,7 @@ typedef struct
 }ND06_DATA;
 
 //struct ND06_DATA nd06_data_default;
-
+extern ND06_DATA nd06_data;
 
 /* ND06AV1C */
 extern ND06AV1C_Dev_t g_nd06av1c_device;

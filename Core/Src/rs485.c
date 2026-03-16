@@ -1,5 +1,5 @@
 #include "rs485.h"
-//#include "PDA_Communication.h"
+#include "PDA_Communication.h"
 #include "main.h"
 //#include "sensorAppLogic.h"
 //#include "sensorParaTable.h"
@@ -101,13 +101,14 @@ uint8_t xor_checkSum(uint8_t *data, uint8_t length)
 
 void RS485_Elevator_Init()
 {
-    HAL_UART_Receive_IT(&huart1, rxDataBuffElevator, 1);
-    RS485_Elevator_RX_ENABLE();
+	RS485_Elevator_RX_ENABLE();
+	HAL_UART_Receive_IT(&huart1, rxDataBuffElevator, 1);
+	RS485_Elevator_RX_ENABLE();
 }
 
 void RS485_PDA_Init()
 {
-    HAL_UART_Receive_IT(&huart1, rxDataBuffPDA, 4);
+    HAL_UART_Receive_IT(&huart2, rxDataBuffPDA, 4);
     RS485_PDA_RX_ENABLE();
 }
 
@@ -215,7 +216,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 				if (rxIndex >= total_len - 1)
 				{
-//						ProcessPacket(pkt);
+						ProcessPacket(pkt);
 
 						rxIndex = 0;
 						total_len = 0;
@@ -245,7 +246,7 @@ uint8_t rxDataEleHeander = 0;
 uint32_t lastReceivedELETime = 0;
 uint32_t cls_cmd_Time =0;
 uint32_t cls_Time = 0;
-uint8_t  ObjectIsDetectedFlag;
+//uint8_t  ObjectIsDetectedFlag;
 
 void ProcessElevatorData(void)
 {
@@ -254,119 +255,119 @@ void ProcessElevatorData(void)
 
 	connectEleFlag = 1;
 		
-		uint8_t checkXor = xor_checkSum(rx_data_Elevator, 16);
-		if (checkXor == rx_data_Elevator[16])
+	uint8_t checkXor = xor_checkSum(rx_data_Elevator, 16);
+	if (checkXor == rx_data_Elevator[16])
+	{
+		CSpara.LevelingSignal = 1;
+
+		masterElevator_LevelingSignal = (rx_data_Elevator[1] >> 0) & 0x01; 
+		if ((rx_data_Elevator[1] >> 0 & 0X01))
 		{
-			CSpara.LevelingSignal = 1;
-
-			masterElevator_LevelingSignal = (rx_data_Elevator[1] >> 0) & 0x01; 
-			if ((rx_data_Elevator[1] >> 0 & 0X01))
-			{
-				
-					CSpara.openDoorCmd = 1;
-			}
-			else
-			{
-					CSpara.openDoorCmd = 0;
-			}
-
-			if ((rx_data_Elevator[1] >> 1 & 0X01))
-			{
-				if(CSpara.closeDoorCmd == 0)
-				{
-					cls_cmd_Time = HAL_GetTick();
-					
-				}
-				if(CSpara.OLS == 1)
-				{
-					work_j = 0;
-				}
-				CSpara.closeDoorCmd = 1;
-			}
-			else
-			{
-					CSpara.closeDoorCmd = 0;
-			}
 			
-			if ((rx_data_Elevator[1] >> 4 & 0X01))
-			{
-					CSpara.OLS = 1;
-			}
-			else
-			{
-					CSpara.OLS = 0;
-			}
-			
-			if ((rx_data_Elevator[1] >> 5 & 0X01))
-			{
-				cls_Time = HAL_GetTick() - cls_cmd_Time;
-				CSpara.CLS = 1;
-				cls_cmd_Time = 0;
-			}
-			else
-			{
-				CSpara.CLS = 0;
-//				work_j = 2;
-			}
-
-			tx_data_Door[0] = 0x86;
-
-			ByteBits *byte_bits = (ByteBits *)&tx_data_Door[1]; // ??? packet[1]
-			if((ObjectIsDetectedFlag == 1 ) || (nd06AV1C_objDetectFlag == 1))
-			{
-//				byte_bits->bits.bit0 = 1;
-				if(HAL_GetTick() - cls_cmd_Time < 0xBB8 )   //0x7d0 2
-				{
-					if(HAL_GetTick() - cls_cmd_Time < 0x7d0 )
-					{
-						work_j = 0;
-					}
-					else if(HAL_GetTick() - cls_cmd_Time < 0x898)  // 0xBB8 3  0x9c4 2.5  0x898 2.2 0x7d0 2
-					{
-						work_j = 1;
-						
-					}
-					else
-					{
-						work_j = 2;
-					}
-					
-					if((work_j == 0)||(work_j == 1))
-						tx_data_Door[1] = 0x01;
-				}
-				if(CSpara.OLS == 1)
-				{
-					tx_data_Door[1] = 0x01;
-					cls_cmd_Time = 0;
-					work_j = 0;
-				}
-			}
-			else
-			{				
-//				byte_bits->bits.bit0 = 0;
-				tx_data_Door[1] = 0x00;
-			}
-
-			tx_data_Door[2] = 0x01;
-			
-			tx_data_Door[8] = 0x01;
-			tx_data_Door[9] = 0x01;
-			tx_data_Door[10] = 0x01;
-			tx_data_Door[11] = 0x40;
-
-			// byte16
-			tx_data_Door[15] = xor_checkSum(tx_data_Door, 16);
-
-			delay_10us(29);
-			HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
-			delay_10us(1);
-			HAL_UART_Transmit_IT(&RS485_Elevator_USART, tx_data_Door, 16);
+				CSpara.openDoorCmd = 1;
+		}
+		else
+		{
+				CSpara.openDoorCmd = 0;
 		}
 
-    headerIsFoundFlag = 0;
-    RxElevatorCnt = 0;
-    memset(rx_data_Elevator, 0, sizeof(rx_data_Elevator));
-    return;
+		if ((rx_data_Elevator[1] >> 1 & 0X01))
+		{
+			if(CSpara.closeDoorCmd == 0)
+			{
+				cls_cmd_Time = HAL_GetTick();
+				
+			}
+			if(CSpara.OLS == 1)
+			{
+				work_j = 0;
+			}
+			CSpara.closeDoorCmd = 1;
+		}
+		else
+		{
+				CSpara.closeDoorCmd = 0;
+		}
+		
+		if ((rx_data_Elevator[1] >> 4 & 0X01))
+		{
+				CSpara.OLS = 1;
+		}
+		else
+		{
+				CSpara.OLS = 0;
+		}
+		
+		if ((rx_data_Elevator[1] >> 5 & 0X01))
+		{
+			cls_Time = HAL_GetTick() - cls_cmd_Time;
+			CSpara.CLS = 1;
+			cls_cmd_Time = 0;
+		}
+		else
+		{
+			CSpara.CLS = 0;
+//				work_j = 2;
+		}
+
+		tx_data_Door[0] = 0x86;
+
+		ByteBits *byte_bits = (ByteBits *)&tx_data_Door[1]; // ??? packet[1]
+		if((ObjectIsDetectedFlag == 1 ) || (nd06AV1C_objDetectFlag == 1))
+		{
+//				byte_bits->bits.bit0 = 1;
+			if(HAL_GetTick() - cls_cmd_Time < 0xBB8 )   //0x7d0 2
+			{
+				if(HAL_GetTick() - cls_cmd_Time < 0x7d0 )
+				{
+					work_j = 0;
+				}
+				else if(HAL_GetTick() - cls_cmd_Time < 0x898)  // 0xBB8 3  0x9c4 2.5  0x898 2.2 0x7d0 2
+				{
+					work_j = 1;
+					
+				}
+				else
+				{
+					work_j = 2;
+				}
+				
+				if((work_j == 0)||(work_j == 1))
+					tx_data_Door[1] = 0x01;
+			}
+			if(CSpara.OLS == 1)
+			{
+				tx_data_Door[1] = 0x01;
+				cls_cmd_Time = 0;
+				work_j = 0;
+			}
+		}
+		else
+		{				
+//				byte_bits->bits.bit0 = 0;
+			tx_data_Door[1] = 0x00;
+		}
+
+		tx_data_Door[2] = 0x01;
+		
+		tx_data_Door[8] = 0x01;
+		tx_data_Door[9] = 0x01;
+		tx_data_Door[10] = 0x01;
+		tx_data_Door[11] = 0x40;
+
+		// byte16
+		tx_data_Door[15] = xor_checkSum(tx_data_Door, 16);
+
+		delay_10us(29);
+		HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, GPIO_PIN_SET);
+		delay_10us(1);
+		HAL_UART_Transmit_IT(&RS485_Elevator_USART, tx_data_Door, 16);
+	}
+
+	headerIsFoundFlag = 0;
+	RxElevatorCnt = 0;
+	memset(rx_data_Elevator, 0, sizeof(rx_data_Elevator));
+	return;
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
