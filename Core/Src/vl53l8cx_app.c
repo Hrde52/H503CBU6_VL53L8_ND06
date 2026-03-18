@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "vl53l8cx_api.h"
 #include "flash_storage.h"
-#include "vl53cx8_app.h"
+#include "vl53l8cx_app.h"
 #include "sensorParaTable.h"
 
 
@@ -80,6 +80,9 @@ uint8_t vl53cx8_device_init(VL53L8CX_Configuration *Dev, uint8_t Resolution, uin
 //		printf("VL53L8CX ULD Loading failed\n");
 		return status;
 	}
+#if (DebugPrintfFlag == 1)
+//	printf("VL53L8CX ULD Loading succeed\n");
+#endif
 	if(Resolution == 4)
 	{
 		status = vl53l8cx_set_resolution(Dev, VL53L8CX_RESOLUTION_4X4);
@@ -120,6 +123,17 @@ uint8_t vl53cx8_ranging_data(VL53L8CX_Configuration *Dev, VL53L8CX_ResultsData *
 		{
 			status = vl53l8cx_get_resolution(Dev, &resolution);
 			status = vl53l8cx_get_ranging_data(Dev, Results);
+			#if (DebugPrintfFlag == 1)
+//			printf("Print data no : %3u\n", Dev->streamcount);
+//			for(uint8_t i = 0; i < 16; i++)
+//			{
+//				printf("Zone : %3d,  Distance : %4d mm\n",
+//					i,
+//					Results->target_status[VL53L8CX_NB_TARGET_PER_ZONE*i],
+//					Results->distance_mm[VL53L8CX_NB_TARGET_PER_ZONE*i]);
+//			}
+//			printf("\n");
+			#endif
 		}		
 	}
 	else {
@@ -146,37 +160,37 @@ void process_second_targets(VL53L8CX_ResultsData *results,  uint32_t study_Dsita
 	uint8_t TARGET_INDEX = VL53L8CX_NB_TARGET_PER_ZONE - 1;                    // 第二层目标索引 (0-based)
 
 	uint32_t pixel_dist;
-    for (uint8_t i = 0; i < current_vl_resl; i++)
-    {
-			for (uint8_t j = 0; j < current_vl_resl; j++)
+	for (uint8_t i = 0; i < current_vl_resl; i++)
+	{
+		for (uint8_t j = 0; j < current_vl_resl; j++)
+		{
+			if(VL53L8CX_NB_TARGET_PER_ZONE == 2)
 			{
-				if(VL53L8CX_NB_TARGET_PER_ZONE == 2)
-				{
-					uint8_t idx = 2*(i * 4 + j) + 1;
+				uint8_t idx = 2*(i * 4 + j) + 1;
 //					pixel_dist = Results.distance_mm[2*(i * 4 + j) + 1];
-					int32_t distance = results->distance_mm[idx];
-					uint8_t status   = results->target_status[idx];
+				int32_t distance = results->distance_mm[idx];
+				uint8_t status   = results->target_status[idx];
 
-			// 检查距离条件（>50mm）和目标状态有效（通常为5或9）
-					if (distance > 50 && (status == 5 || status == 9))
+		// 检查距离条件（>50mm）和目标状态有效（通常为5或9）
+				if (distance > 50 && (status == 5 || status == 9))
+				{
+					// 这里可以对有效数据进行处理，例如保存、平均等
+					// 注意：若需补偿滤光片厚度，可减去4mm得到实际物理距离
+					int32_t actual_distance = distance - 4; // 减去滤光片厚度
+					// 处理数据
+					if((actual_distance > 200)&&
+						(actual_distance < (study_Dsitance -thresh)))
 					{
-						// 这里可以对有效数据进行处理，例如保存、平均等
-						// 注意：若需补偿滤光片厚度，可减去4mm得到实际物理距离
-						int32_t actual_distance = distance - 4; // 减去滤光片厚度
-						// 处理数据
-						if((actual_distance > 200)&&
-							(actual_distance < (study_Dsitance -thresh)))
-						{
-							*detect_flag = 1;
-						}
-						else
-						{
-							*detect_flag = 0;
-						}
+						*detect_flag = 1;
+					}
+					else
+					{
+						*detect_flag = 0;
 					}
 				}
 			}
 		}
+	}
 	/*
 	for (uint8_t zone = 0; zone < ZONE_COUNT; zone++)
 	{

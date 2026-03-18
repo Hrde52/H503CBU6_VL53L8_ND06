@@ -83,6 +83,12 @@ typedef struct
 	/* Example for most standard platform : I2C address of sensor */
     uint16_t  			address;
 
+	// 增加去区分IIC1和IIC2
+	I2C_HandleTypeDef *hi2c;      // 指向该传感器使用的 I2C 句柄
+	GPIO_TypeDef *lpn_port; // 复位引脚独立
+	uint16_t lpn_pin;
+	GPIO_TypeDef *sync_port;
+	uint16_t sync_pin;
 } VL53L8CX_Platform;
 
 /*
@@ -93,7 +99,7 @@ typedef struct
  */
 
 #define 	VL53L8CX_NB_TARGET_PER_ZONE		2U
-
+#define		USE_IIC	1
 /*
  * @brief The macro below can be used to avoid data conversion into the driver.
  * By default there is a conversion between firmware and user data. Using this macro

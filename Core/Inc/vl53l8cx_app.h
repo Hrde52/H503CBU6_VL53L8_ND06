@@ -1,5 +1,5 @@
-#ifndef VL53CX8_APP_H
-#define VL53CX8_APP_H
+#ifndef VL53L8CX_APP_H
+#define VL53L8CX_APP_H
 
 #include "vl53l8cx_api.h"
 

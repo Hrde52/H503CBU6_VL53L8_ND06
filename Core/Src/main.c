@@ -29,7 +29,7 @@
 #include "vl53l8cx_api.h"
 #include "Example.h"
 
-#include "vl53cx8_app.h"
+#include "vl53l8cx_app.h"
 
 #include "nd06av1c_comm.h"
 #include "nd06av1c_data.h"
@@ -95,9 +95,29 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	static VL53L8CX_Configuration 	Dev;
+		VL53L8CX_Platform platform_sensor1 = {
+			.address = 0x52,              // 传感器1的I2C地址
+			.hi2c = &hi2c1,
+			.lpn_port = VL53A_LPn_GPIO_Port,
+			.lpn_pin = VL53A_LPn_Pin,
+			.sync_port = VL53A_SYNC_GPIO_Port,
+			.sync_pin = VL53A_SYNC_Pin
+	};
+
+	VL53L8CX_Platform platform_sensor2 = {
+			.address = 0x52,              // 传感器2的I2C地址（需硬件配置）
+			.hi2c = &hi2c2,
+			.lpn_port = VL53B_LPn_GPIO_Port,
+			.lpn_pin = VL53B_LPn_Pin,
+			.sync_port = VL53B_SYNC_GPIO_Port,
+			.sync_pin = VL53B_SYNC_Pin
+	};
+	
+	static VL53L8CX_Configuration 	Dev1, Dev2;
+	Dev1.platform  = platform_sensor1;
+	Dev2.platform  = platform_sensor2;
 	nb_target = 2;
-	current_vl_resl = 8;
+	current_vl_resl = 4;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -132,14 +152,12 @@ int main(void)
 //	HAL_Delay(2000);
 //	ND06AV1C_Init();
 	
-	vl53cx8_device_init(&Dev, current_vl_resl, 10);
+	vl53cx8_device_init(&Dev2, current_vl_resl, 10);
 	
 	RS485_PDA_RX_ENABLE();
   HAL_UART_Receive_IT(&RS485_PDA_USART, rxDBuffPDA, 1);
 	
 	RS485_Elevator_Init();
-	
-//	example8();
 
   /* USER CODE END 2 */
 
@@ -150,29 +168,30 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		if (TIME_1MS_FLAG == 1)
-		{
-			TIME_1MS_FLAG = 0;
-		}
-		if (TIME_5MS_FLAG == 1)
-		{
-			TIME_5MS_FLAG = 0;
-			
-		}
+//		if (TIME_1MS_FLAG == 1)
+//		{
+//			TIME_1MS_FLAG = 0;
+//		}
+//		if (TIME_5MS_FLAG == 1)
+//		{
+//			TIME_5MS_FLAG = 0;
+//			
+//		}
 		if (TIME_10MS_FLAG == 1)
 		{
 			TIME_10MS_FLAG = 0;
 			
-			vl53cx8_ranging_data(&Dev, &Results);
-			process_second_targets(&Results, PARA_TABLE_USE.data.nd06StudyDistance, 
-															PARA_TABLE_USE.data.nd06DistanceChkThreshold, 
-															&ObjectIsDetectedFlag);
+//			vl53cx8_ranging_data(&Dev, &Results);
+//			process_second_targets(&Results, PARA_TABLE_USE.data.nd06StudyDistance, 
+//															PARA_TABLE_USE.data.nd06DistanceChkThreshold, 
+//															&ObjectIsDetectedFlag);
 			
 //			ND06AV1C_Ranging(&nd06_data, 0, work_j, &nd06AV1C_objDetectFlag);
 		}
 		if (TIME_100MS_FLAG == 1)
 		{
 			TIME_100MS_FLAG = 0;
+			vl53cx8_ranging_data(&Dev2, &Results);
 		}
 		
 		

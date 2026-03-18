@@ -77,10 +77,13 @@ uint8_t VL53L8CX_RdByte(
 
 	data_write[0] = (RegisterAdress >> 8) & 0xFF;
 	data_write[1] = RegisterAdress & 0xFF;
-//	status = HAL_I2C_Master_Transmit(&hi2c1, p_platform->address, data_write, 2, 100);
-//	status = HAL_I2C_Master_Receive(&hi2c1, p_platform->address, data_read, 1, 100);
-		status = HAL_I2C_Master_Transmit(&hi2c2, p_platform->address, data_write, 2, 100);
-	status = HAL_I2C_Master_Receive(&hi2c2, p_platform->address, data_read, 1, 100);
+//#if(USE_IIC == 1)
+	status = HAL_I2C_Master_Transmit(p_platform->hi2c, p_platform->address, data_write, 2, 100);
+	status = HAL_I2C_Master_Receive(p_platform->hi2c, p_platform->address, data_read, 1, 100);
+//#else if(USE_IIC == 2)
+//		status = HAL_I2C_Master_Transmit(&hi2c2, p_platform->address, data_write, 2, 100);
+//	status = HAL_I2C_Master_Receive(&hi2c2, p_platform->address, data_read, 1, 100);
+//#endif
 	*p_value = data_read[0];
 
 	return status;
@@ -98,7 +101,7 @@ uint8_t VL53L8CX_WrByte(
 	data_write[1] = RegisterAdress & 0xFF;
 	data_write[2] = value & 0xFF;
 //	status = HAL_I2C_Master_Transmit(&hi2c1,p_platform->address, data_write, 3, 100);
-	status = HAL_I2C_Master_Transmit(&hi2c2,p_platform->address, data_write, 3, 100);
+	status = HAL_I2C_Master_Transmit(p_platform->hi2c, p_platform->address, data_write, 3, 100);
 
 	return status;
 }
@@ -111,7 +114,7 @@ uint8_t VL53L8CX_WrMulti(
 {
 //	uint8_t status = HAL_I2C_Mem_Write(&hi2c1, p_platform->address, RegisterAdress,
 //									I2C_MEMADD_SIZE_16BIT, p_values, size, 65535);
-		uint8_t status = HAL_I2C_Mem_Write(&hi2c2, p_platform->address, RegisterAdress,
+		uint8_t status = HAL_I2C_Mem_Write(p_platform->hi2c, p_platform->address, RegisterAdress,
 									I2C_MEMADD_SIZE_16BIT, p_values, size, 65535);
 	return status;
 }
@@ -128,8 +131,8 @@ uint8_t VL53L8CX_RdMulti(
 	data_write[1] = RegisterAdress & 0xFF;
 //	status = HAL_I2C_Master_Transmit(&hi2c1, p_platform->address, data_write, 2, 100);
 //	status += HAL_I2C_Master_Receive(&hi2c1, p_platform->address, p_values, size, 100);
-	status = HAL_I2C_Master_Transmit(&hi2c2, p_platform->address, data_write, 2, 100);
-	status += HAL_I2C_Master_Receive(&hi2c2, p_platform->address, p_values, size, 100);
+	status = HAL_I2C_Master_Transmit(p_platform->hi2c, p_platform->address, data_write, 2, 100);
+	status += HAL_I2C_Master_Receive(p_platform->hi2c, p_platform->address, p_values, size, 100);
 	return status;
 }
 
@@ -137,18 +140,18 @@ uint8_t VL53L8CX_Reset_Sensor(VL53L8CX_Platform *p_platform)
 {
 	/* Toggle EVK PWR EN board and Lpn pins */
 //	HAL_GPIO_WritePin(LPn_C_GPIO_Port, LPn_C_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(VL53B_LPn_GPIO_Port, VL53B_LPn_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(VL53B_SYNC_GPIO_Port, VL53B_SYNC_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(p_platform->lpn_port, p_platform->lpn_pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(p_platform->sync_port, p_platform->sync_pin, GPIO_PIN_RESET);
 //	HAL_GPIO_WritePin(LPn_R_GPIO_Port, LPn_R_Pin, GPIO_PIN_RESET);
 //	HAL_GPIO_WritePin(PWR_EN_R_GPIO_Port, PWR_EN_R_Pin, GPIO_PIN_RESET);
 //	HAL_GPIO_WritePin(LPn_L_GPIO_Port, LPn_L_Pin, GPIO_PIN_RESET);
 //	HAL_GPIO_WritePin(PWR_EN_L_GPIO_Port, PWR_EN_L_Pin, GPIO_PIN_RESET);
 	HAL_Delay(100);
 
-	HAL_GPIO_WritePin(VL53B_SYNC_GPIO_Port, VL53B_SYNC_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(p_platform->sync_port, p_platform->sync_pin, GPIO_PIN_SET);
 	HAL_Delay(100);
 //	HAL_GPIO_WritePin(LPn_C_GPIO_Port, LPn_C_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(VL53B_LPn_GPIO_Port, VL53B_LPn_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(p_platform->lpn_port, p_platform->lpn_pin, GPIO_PIN_SET);
 	HAL_Delay(100);
 	return 0;
 }

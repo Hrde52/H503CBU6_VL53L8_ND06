@@ -4,7 +4,7 @@
 //#include "sensorAppLogic.h"
 #include "sensorParaTable.h"
 #include "string.h"
-#include "vl53cx8_app.h"
+#include "vl53l8cx_app.h"
 
 // #define uint8_t unsigned int
 
@@ -525,50 +525,61 @@ void HandleHeartbeat(SensorProtocol *pkt)
     offset += 2;
 
     // b9-b40 ND06 distance
-    uint32_t pixel_dist;
+    uint32_t pixel_dist, vl53_fistPeakDist, vl53_SecondPeakDist;
     for (uint8_t i = 0; i < 4; i++)
     {
 			for (uint8_t j = 0; j < 4; j++)
 			{
 				if(PARA_TABLE_USE.data.sensorAddr == 0x58)
 				{
-					if(current_vl_resl == 4)
+					if(VL53L8CX_NB_TARGET_PER_ZONE == 1)
 					{
-						pixel_dist = Results.distance_mm[2*(i * 4 + j) + 1];
+						pixel_dist = Results.distance_mm[i * 4 + j];
 					}
-					else
+					else if(VL53L8CX_NB_TARGET_PER_ZONE == 2)
 					{
-						uint8_t original_index, row, col;
-						switch (PARA_TABLE_USE.data.closingDoorTimeThreshold)//b25
+						if(current_vl_resl == 4)
 						{
-							case 100:
-								row = (i+1)*2;              // 实际行号：5,6,7,8
-							  col = j+1;          // 实际列号：2,4,6,8
-							  break;
-							case 200:
-							  row = (i+1)*2+8;              // 实际行号：5,6,7,8
-							  col = j+1;          // 实际列号：2,4,6,8
-								break;
-							case 300:
-								row = (i+1)*2+64;              // 实际行号：5,6,7,8
-								col = j+5;          // 实际列号：2,4,6,8
-								break;
-							case 400:
-								row =  (i+1)*2+72;              // 实际行号：5,6,7,8
-								col = j+5;          // 实际列号：1,3,5,7
-								break;
-							default:
-								break;
+							vl53_fistPeakDist = Results.distance_mm[2*(i * 4 + j) + 1] > Results.distance_mm[2*(i * 4 + j)] 
+																? Results.distance_mm[2*(i * 4 + j) + 1] : Results.distance_mm[2*(i * 4 + j) ];
+							vl53_SecondPeakDist = Results.distance_mm[2*(i * 4 + j) + 1] < Results.distance_mm[2*(i * 4 + j)] 
+																? Results.distance_mm[2*(i * 4 + j) + 1] : Results.distance_mm[2*(i * 4 + j) ];
+							pixel_dist = vl53_fistPeakDist;
+						}
+						else
+						{
+							uint8_t original_index, row, col;
+							switch (PARA_TABLE_USE.data.closingDoorTimeThreshold)//b25
+							{
+								case 100:
+									row = (i+1)*2;              // 实际行号：5,6,7,8
+									col = j+1;          // 实际列号：2,4,6,8
+									break;
+								case 200:
+									row = (i+1)*2+8;              // 实际行号：5,6,7,8
+									col = j+1;          // 实际列号：2,4,6,8
+									break;
+								case 300:
+									row = (i+1)*2+64;              // 实际行号：5,6,7,8
+									col = j+5;          // 实际列号：2,4,6,8
+									break;
+								case 400:
+									row =  (i+1)*2+72;              // 实际行号：5,6,7,8
+									col = j+5;          // 实际列号：1,3,5,7
+									break;
+								default:
+									break;
+							}
+							
+							// 一维数组索引计算：col * 16 + row，注意col需要减1因为列号从1开始
+							original_index = (col ) * 16 + row ;
+							if(Results.distance_mm[original_index-1] > PARA_TABLE_USE.data.dts6012StudyDistance)
+								pixel_dist = Results.distance_mm[original_index-1];
+							else
+								pixel_dist = Results.distance_mm[original_index-2];
 						}
 						
-						// 一维数组索引计算：col * 16 + row，注意col需要减1因为列号从1开始
-						original_index = (col ) * 16 + row ;
-						if(Results.distance_mm[original_index-1] > PARA_TABLE_USE.data.dts6012StudyDistance)
-							pixel_dist = Results.distance_mm[original_index-1];
-						else
-							pixel_dist = Results.distance_mm[original_index-2];
 					}
-					
 				}
 				else
 				{
@@ -593,7 +604,7 @@ void HandleHeartbeat(SensorProtocol *pkt)
 					{
 						if(current_vl_resl == 4)
 						{
-							pixel_amp = Results.distance_mm[2*(i * 4 + j)];
+							pixel_amp = vl53_SecondPeakDist/*Results.distance_mm[2*(i * 4 + j)]*/;
 						}
 						else
 						{

@@ -248,7 +248,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 #if (DebugPrintfFlag)
 int fputc(int ch, FILE *f)
 {
-  HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, 1); // ʹ��485����
+  HAL_GPIO_WritePin(RS485_EN_GPIO_Port, RS485_EN_Pin, 1);
   HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xffff);
   return ch;
 }

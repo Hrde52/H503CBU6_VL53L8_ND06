@@ -49,7 +49,7 @@ void ND06AV1C_Init(void)
 		;
 //		printf("ND06AV1C_WaitDeviceBootUp error\r\n");
 		#if(DebugPrintfFlag == 1)
-	    printf("ND06AV1C_WaitDeviceBootUp error\r\n");
+//	    printf("ND06AV1C_WaitDeviceBootUp error\r\n");
 		#endif
 	    //return -1;
 	}
@@ -59,7 +59,7 @@ void ND06AV1C_Init(void)
 		;
 //		printf("ND06AV1C_WaitDeviceBootUp error\r\n");
 		#if(DebugPrintfFlag == 1)
-	    printf("ND06AV1C_InitDevice error!!\r\n");
+//	    printf("ND06AV1C_InitDevice error!!\r\n");
 		#endif
 	    //return -1;
 	}
